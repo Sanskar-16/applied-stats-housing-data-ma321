@@ -1,0 +1,160 @@
+---
+title: "Visualising categorical variables"
+author: "Aris Perperoglou"
+date: "31 October 2018"
+output: 
+  revealjs::revealjs_presentation:
+    theme: night
+    highlight: pygments
+    center: true
+    transition: none
+---
+
+
+```{r,echo=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=5) 
+```
+
+## Titanic data
+
+```{r}
+titanic1 <- data.frame(Titanic)
+titanic1
+```
+
+
+## Original data
+
+```{r}
+Titanic
+```
+
+
+
+## Make some plots
+
+
+```{r,eval=FALSE}
+library(ggplot2)
+p <- ggplot(titanic1, aes(weight=Freq))+ylab("")+ylim(0,2250)+theme_bw()
+p+aes(Class)+geom_bar(fill="#af8dc3")
+```
+
+
+## Make some plots
+
+
+```{r,echo=FALSE}
+library(ggplot2)
+p <- ggplot(titanic1, aes(weight=Freq))+ylab("")+ylim(0,2250)+theme_bw()
+p+aes(Class)+geom_bar(fill="#af8dc3")
+```
+
+## More plots
+
+```{r}
+p+aes(Sex)+geom_bar(fill="#af8dc3")
+```
+
+
+## Combine all in one page
+
+```{r,eval=FALSE}
+library(gridExtra)
+p <- ggplot(titanic1, aes(weight=Freq))+ylab("")+ylim(0,2250)+theme_bw()
+cs <- p+aes(Class)+geom_bar(fill="#af8dc3")
+sx <- p+aes(Sex)+geom_bar(fill="#af8dc3")
+ag <- p+aes(Age)+geom_bar(fill="#af8dc3")
+su <- p+aes(Survived)+geom_bar(fill="#af8dc3")
+grid.arrange(cs,sx,ag,su)
+```
+
+
+
+## Result
+
+```{r,echo=FALSE}
+library(gridExtra)
+p <- ggplot(titanic1, aes(weight=Freq))+ylab("")+ylim(0,2250)+theme_bw()
+cs <- p+aes(Class)+geom_bar(fill="#af8dc3")
+sx <- p+aes(Sex)+geom_bar(fill="#af8dc3")
+ag <- p+aes(Age)+geom_bar(fill="#af8dc3")
+su <- p+aes(Survived)+geom_bar(fill="#af8dc3")
+grid.arrange(cs,sx,ag,su)
+```
+
+
+# More dimensions
+
+
+## Cross tabs
+
+How do I plot how many people survived/died per class?
+
+
+
+## The facet_wrap
+
+```{r}
+cs <- p+aes(Class)+geom_bar(fill="#af8dc3")+facet_wrap(~Survived)
+cs
+```
+
+
+## Combine 
+```{r,echo=FALSE}
+p <- ggplot(titanic1, aes(weight=Freq))+ylab("")+ylim(0,1000)+theme_bw()
+cs <- p+aes(Class)+geom_bar(fill="#af8dc3")+facet_wrap(~Survived)
+sx <- p+aes(Sex)+geom_bar(fill="#af8dc3")+facet_wrap(~Survived)
+ag <- p+aes(Age)+geom_bar(fill="#af8dc3")+facet_wrap(~Survived)
+su <- p+aes(Survived)+geom_bar(fill="#af8dc3")+facet_wrap(~Survived)
+grid.arrange(cs,sx,ag)
+```
+
+
+## The facet_grid
+
+```{r}
+p+aes(Class)+geom_bar(fill="#af8dc3")+facet_grid(Sex~Survived)
+```
+
+
+## The facet_grid
+
+```{r}
+p+aes(Age)+geom_bar(fill="#af8dc3")+facet_grid(Sex~Survived)
+```
+
+## The facet_grid
+
+```{r}
+p+aes(Age)+geom_bar(fill="#af8dc3")+facet_grid(Class~Survived)
+```
+
+## The facet_grid
+```{r}
+p+aes(Sex)+geom_bar(fill="#af8dc3")+facet_grid(Class~Survived)
+```
+
+
+## A mosaic plot
+
+```{r, eval=FALSE}
+ggplot(titanic1,
+       aes(x = Class, y = Freq,  fill = Survived)) +
+  geom_bar(stat = "identity", position = "fill") +
+  facet_grid(~Class, scales = "free_x", space = "free_x") +
+  scale_fill_brewer(palette = "RdYlGn") +
+  theme_void() 
+```
+
+
+## A mosaic plot
+```{r, echo=FALSE}
+ggplot(titanic1,
+       aes(x = Class, y = Freq,  fill = Survived)) +
+  geom_bar(stat = "identity", position = "fill") +
+  facet_grid(~Class, scales = "free_x", space = "free_x") +
+  scale_fill_brewer(palette = "RdYlGn") +
+  theme_void()
+```  

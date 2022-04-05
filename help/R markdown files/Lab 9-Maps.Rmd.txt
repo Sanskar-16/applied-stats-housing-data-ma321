@@ -1,0 +1,115 @@
+---
+title: "Make maps in R"
+author: "Aris Perperoglou"
+date: "13 November 2018"
+output:
+  revealjs::revealjs_presentation:
+    theme: simple
+    highlight: pygments
+    center: true
+    transition: none
+---
+
+
+## The basic packages
+
+Remember you need to install these if they are not available.
+```{r  message=FALSE, warning=FALSE}
+library(rgdal)
+library(ggplot2)
+library(sf)
+library(tidyverse)
+library(ggmap)
+```
+
+
+## Read your shapefile
+
+```{r message=FALSE, warning=FALSE}
+shp <- readOGR(dsn = "C:\\Users\\aperpe\\Downloads\\MA304\\Dept_37-00049\\37-00049_Shapefiles/EPIC.shp")
+```
+
+
+## Check how the data look like
+
+```{r, eval=FALSE}
+shp
+```
+
+## Convert to data frame
+
+You need to convert the shapefile to data frame to be able to plot it with ggplot
+```{r}
+shp_df <- fortify(shp)
+```
+
+## Plot the data
+
+
+```{r }
+shpMap <- ggplot(data = shp_df, aes(long,lat)) +
+  geom_polygon(aes(group = group), fill="grey80") +
+  coord_equal() +
+  labs(x = "Longitude (Degrees)",
+       y = "Latitude (Degrees)",
+       title = "Map ",
+       subtitle = "Map - Based on the Lat Long in Shape Files")
+shpMap
+```
+
+## Load crimes
+
+```{r  message=FALSE, warning=FALSE}
+offences <- read_csv("C:\\Users\\aperpe\\Downloads\\MA304\\Dept_37-00049\\37-00049_UOF-P_2016_prepped.csv", skip = 1)
+#counting crimes
+crimes <- offences %>% group_by(`Latitude`,`Longitude`) %>% 
+          count() %>% arrange(desc(n)) %>% drop_na()
+#renaming long column names
+names(crimes) <- c('y','x','n')
+#considering only instances of crimes more than once
+crimes_gt_1 <- crimes[crimes$n>1,]
+```
+
+
+## Working with google maps
+
+ - Set up an account at google
+ - https://developers.google.com/maps/documentation/maps-static/get-api-key
+ - You need to register with a debit card (however is free, google will not charge for using maps within Rstudio)
+ - You need to enable Geogoding API and Maps Static API
+ 
+ 
+## In R
+
+Start ggmaps and then use the following command:
+
+```{r,eval=FALSE}
+library(ggmaps)
+register_google(key = "copy your key from google site")
+```
+
+## A simple example
+
+```{r,eval=FALSE}
+Colchester <- get_map(location="Colchester, UK",zoom=15,source="stamen")
+Colchester
+map(Colchester)
+```
+                
+
+## Map from google
+
+```{r,eval=FALSE}
+map <- get_map(location = "Dallas, Texas", zoom = 11, source = "stamen")
+map
+```
+
+## Overlay Crime
+
+```{r,eval=FALSE}
+ggmap(map)+ 
+  geom_point(aes(x= x, y= y, size= n, alpha  0.8, color= "#fff000"), 
+             data = crimes) +  
+  labs(title = "Crime Occurencese") + 
+  theme(legend.position="none")
+```

@@ -1,0 +1,166 @@
+---
+title: "Working with time series data"
+author: "Aris Perperoglou"
+date: "6 November 2018"
+output:
+  revealjs::revealjs_presentation:
+    theme: night
+    highlight: pygments
+    center: true
+    transition: none
+---
+
+```{r}
+knitr::opts_chunk$set(fig.width=8, fig.height=5) 
+```
+
+
+# Time Series Plots
+
+## Tweets on the Greek elections
+
+## Use the following libraries
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(RColorBrewer)
+```
+
+## Read data
+
+```{r}
+dlong <- read.table("C:/Users/aperpe/Documents/tweets analysis/twts/sqldata/wk.dat",header=TRUE) # long format
+```
+
+Data in wide format. Check using
+
+```{r, eval=FALSE}
+dlong[1:10,]
+```
+
+## Data
+
+```{r}
+dlong[c(1:5,500:505),]
+```
+
+
+## Change data format
+```{r}
+dwide <- dcast(dlong,Date~Party)  # wide format
+dwide[1:10,]
+dSyr <- dwide[,c(1,10)]
+```
+
+## Check data
+
+```{r}
+dSyr[1:5,]
+```
+
+
+# Plot with ggplot
+
+
+## The base
+
+```{r}
+gbase <- ggplot(dSyr,aes(x=as.Date(Date),y=Syriza))
+```
+
+## Simple graph
+
+```{r}
+g1 <- gbase+geom_line(size=1)
+g1
+```
+
+## Add legends
+
+```{r}
+g1 +xlab("Date")+ylab("Tweets")
+```
+
+## Add transparency and area
+
+```{r}
+g1 +xlab("Date")+ylab("Tweets")+  geom_area(alpha=0.4,position="identity")
+```
+
+## Change background
+
+```{r}
+g1 +xlab("Date")+ylab("Tweets")+  geom_area(alpha=0.4,position="identity")+theme_bw()
+```
+
+
+# More parties
+
+
+## Select one more party
+
+```{r}
+dsel<- dwide[7:nrow(dwide),c(1,7,10)] # select only two parties
+dsel <- melt(dsel) # make into a long format
+names(dsel) <- c("date","Party","freq")
+cbPalette <- c("#2166ac","gray")
+```
+
+## Plot
+```{r}
+g1 <- ggplot(dsel,aes(x=as.Date(date),y=freq,fill=Party))+geom_line(size=1)+
+  xlab("Date")+ylab("Tweets")+theme_bw()
+g1
+```
+
+## Customise
+```{r}
+g2 <- g1+  geom_area(alpha=0.4,position="identity")
+g2
+```
+
+## Change colours
+```{r}
+g3 <- g2 + scale_fill_manual(values =cbPalette)
+g3
+```
+
+## Change legend position
+
+```{r}
+g4 <- g3 +theme(legend.position =c( .08,.9))
+g4
+```
+
+## Change scales
+
+```{r}
+g4 +  scale_x_date(breaks = NULL,
+               minor_breaks = NULL) 
+```
+
+## Change scales
+
+```{r}
+g4 +  scale_x_date( date_labels = "%b",date_breaks="1 months") 
+```
+
+## Change scales
+
+```{r}
+g4 +  scale_x_date( date_labels = "%b (%a)",date_breaks="2 months") 
+```
+
+## Smooth series
+
+```{r}
+g4+ stat_smooth(method = "loess", formula = y ~ x, size = 1)
+```
+
+
+## Smooth sereis
+```{r}
+ggplot(dsel,aes(x=as.Date(date),y=freq,fill=Party))+ stat_smooth(method = "loess", formula = y ~ x, size = 1)+
+  xlab("Date")+ylab("Tweets")+theme_bw()+ylim(0,25000)
+```

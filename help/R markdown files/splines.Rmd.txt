@@ -1,0 +1,47 @@
+---
+title: ""
+author: ""
+date: ""
+output: html_document
+runtime: shiny
+---
+
+## B-splines in a nutshell
+
+```{r, echo=FALSE}
+inputPanel(
+    checkboxInput("reg", "Show line", FALSE),
+    checkboxInput("splines", "Show splines", FALSE),
+      conditionalPanel(condition = "input.splines == true",
+    selectInput("dg", label = "Degree:",
+              choices=c(1,2,3), selected=1),
+    sliderInput("seg", label = "Degrees of freedom:",
+              min = 1, max = 20, value=4, ticks=TRUE ),
+    checkboxInput("fit", "Show fit", FALSE))  
+)
+
+
+renderPlot({
+library(splines)
+
+set.seed(555)
+x = sort(runif(5000))
+y = sin(7* x) + 2 + rnorm(5000) * 0.7
+u <- seq(min(x),max(x),length=5000)
+Bu <- bs(x,df=as.numeric(input$seg),degree=as.numeric(input$dg))
+
+plot(x,y,ylim=c(-5,6),axes=FALSE,ylab="")
+axis(1)
+if(input$reg){
+  abline(lm(y~x))
+}
+
+
+fit <- lm(y~Bu)
+if(input$splines){
+for( i in 1:ncol(Bu)){
+lines(u,3*Bu[,i]-5,col=3,lwd=2)}}
+if(input$fit){
+lines(x,predict(fit),col=2,lwd=2)}
+})
+```

@@ -1,0 +1,106 @@
+---
+title: "How to create a shiny document"
+author: "Aris Perperoglou"
+date: "20 November 2018"
+output: ioslides_presentation
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Start
+
+ - Create a new file File>R markdown > shiny document. 
+ - A template document will appear. 
+ - Delete everything below the pre-amp.
+
+
+
+## Inputs and Outputs
+
+- A shiny document needs an input panel and an output.
+- Input asks the uses parameters.
+- Output runs some code and creates outputs.
+
+
+## Lets start
+
+ - We will create a simple simulation. 
+
+```{r, eval=FALSE}
+n <- 100
+x <- rnorm(n)
+y <- .8+1.2*x^2+rnorm(n)
+plot(x,y)
+```
+
+## Then plot
+
+```{r,eval=FALSE}
+fit1 <- lm(y~x)
+fit2 <- lm(y~x^2)
+plot(x,y)
+lines(sort(x),fit1$coef[1]+fit1$coef[2]*sort(x),col=3)
+lines(sort(x),fit2$coef[1]+fit2$coef[2]*sort(x)^2,col=2)
+```
+
+## Interactive plots
+
+ - Let us change the size of the simulation. 
+ - We want to try the same script for n=50,100,500,1000,2000
+ 
+ 
+## Input panel
+
+```{r, eval=FALSE}
+inputPanel(
+  selectInput("n", label = "Number of observations:",
+              choices = c(50,100, 500, 1000, 2000), selected = 50))
+```
+
+
+## Output panel
+
+```{r, eval=FALSE}
+renderPlot({
+  n <- input$n
+  x <- seq(0,1,length=n)
+  y <- .8+4*x^2+rnorm(n)*.3
+  fit1 <- lm(y~x)
+  U <- bs(x,df=10)
+  fit2 <- lm(y~U)
+  plot(x,y)
+  lines(x,fit1$coef[1]+fit1$coef[2]*x,col=3)
+  lines(x,cbind(1,U)%*%fit2$coefficients,col=2)
+})
+```
+
+## Outcome
+
+
+```{r, echo=FALSE}
+inputPanel(
+  selectInput("n", label = "Number of observations:",
+              choices = c(50,100, 500, 1000, 2000), selected = 50))
+
+
+renderPlot({
+  library(splines)
+  n <- as.numeric(input$n)
+  x <- seq(0,1,length=n)
+  y <- .8+4*x^2+rnorm(n)*.3
+  fit1 <- lm(y~x)
+  U <- bs(x,df=10)
+  fit2 <- lm(y~U)
+  plot(x,y)
+  lines(x,fit1$coef[1]+fit1$coef[2]*x,col=3)
+  lines(x,cbind(1,U)%*%fit2$coefficients,col=2,lwd=2)
+})
+```
+
+## More examples
+
+https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/

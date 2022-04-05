@@ -1,0 +1,316 @@
+---
+title: "A guide to Leaflet"
+author: "Aris Perperoglou"
+date: "27 November 2018"
+output:
+  revealjs::revealjs_presentation:
+    theme: simple
+    highlight: pygments
+    center: true
+    transition: none
+---
+
+#The basics 
+
+
+## Install packages
+
+```{r}
+#install.packages("leaflet")
+library(leaflet)
+```
+
+## First plot
+
+```{r,eval=FALSE}
+m <- leaflet() %>%
+  addTiles()  
+m
+```
+
+
+## First plot: The world
+
+```{r,echo=FALSE}
+m <- leaflet() %>%
+  addTiles()  
+m
+```
+
+## A map of our Uni
+
+```{r,eval=FALSE}
+leaflet() %>% addTiles %>%
+setView(0.946779,51.878448,  zoom = 16)
+```
+
+
+
+## A map of our Uni
+
+```{r,echo=FALSE}
+leaflet() %>% addTiles %>%
+setView(0.946779,51.878448,  zoom = 16)
+```
+
+
+
+# Map Crime in Colchester
+
+## Some packages
+```{r}
+#library(devtools)
+#install_github("njtierney/ukpolice")
+#remotes::install_github("njtierney/ukpolice",force = TRUE)
+library(ukpolice)
+```
+
+
+## Get the data
+```{r, warning=FALSE, message=FALSE}
+crime_data <- ukp_crime(lat = 51.889801, lng = 0.901230)
+dim(crime_data)
+head(crime_data)
+```
+
+## Plot
+```{r,eval=FALSE}
+library(dplyr)
+library(ggplot2)
+
+crime_data %>%
+  count(category) %>%
+  ggplot(aes(x = reorder(category, n),y = n)) + 
+  geom_col(fill="#756bb1") + 
+  labs(x = "Crime Type",
+       y = "Number of Crimes",
+       title = paste0("Crimes commited in ",crime_data$date[1])) +
+  coord_flip() +
+  theme_minimal()
+```  
+  
+  
+## Plot
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+
+crime_data %>%
+  count(category) %>%
+  ggplot(aes(x = reorder(category, n),y = n)) + 
+  geom_col(fill="#756bb1") + 
+  labs(x = "Crime Type",
+       y = "Number of Crimes",
+       title = paste0("Crimes commited in ",crime_data$date[1])) +
+  coord_flip() +
+  theme_minimal()
+```  
+
+
+## Map of crime
+
+```{r,eval=FALSE}
+crime_data %>%
+  leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(popup = ~category)  
+```
+
+
+## Map of crime
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+crime_data %>%
+  leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(popup = ~category)  
+```
+
+
+
+## More data
+
+```{r, warning=FALSE, message=FALSE}
+Crime_8 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-08")
+Crime_7 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-07")
+Crime_6 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-06")
+Crime_5 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-05")
+Crime_4 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-04")
+Crime_3 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-03")
+Crime_2 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-02")
+Crime_1 <- ukp_crime(lat = 51.889801, lng = 0.901230, date = "2018-01")
+Crime2018 <- rbind(Crime_1,Crime_2,Crime_3,Crime_4,Crime_5,Crime_6,
+                   Crime_7,Crime_8,crime_data)
+
+```
+
+
+## Plot data 
+```{r,eval=FALSE}
+Crime2018 %>%
+  count(category) %>%
+  ggplot(aes(x = reorder(category, n),y = n)) + 
+  geom_col(fill="#756bb1") + 
+  labs(x = "Crime Type",
+       y = "Number of Crimes",
+       title = ("Crimes commited in 2018")) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+
+## Plot data 
+```{r,echo=FALSE}
+Crime2018 %>%
+  count(category) %>%
+  ggplot(aes(x = reorder(category, n),y = n)) + 
+  geom_col(fill="#756bb1") + 
+  labs(x = "Crime Type",
+       y = "Number of Crimes",
+       title = ("Crimes commited in 2018")) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+# More functions
+
+
+## Adding layers
+
+```{r,eval=FALSE}
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data = Crime2018[Crime2018$category=="drugs",], group = "Drugs")%>%
+  addCircleMarkers(data = Crime2018[Crime2018$category=="burglary",], group = "Burglary",color="red")
+```
+
+
+## Adding layers
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data = Crime2018[Crime2018$category=="drugs",], group = "Drugs")%>%
+  addCircleMarkers(data = Crime2018[Crime2018$category=="burglary",], group = "Burglary",color="red")
+```
+
+
+# Advanced layers
+
+## Basis
+
+```{r,eval=FALSE}
+map <- leaflet(Crime2018)%>%
+  # Base groups
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")
+map
+```
+
+## Basis
+
+```{r,echo=FALSE}
+map <- leaflet(Crime2018)%>%
+  # Base groups
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")
+map
+```
+
+## Add tiles
+
+ - You can change the background by using `add provider tiles`
+```{r, eval=FALSE}
+map <- leaflet(Crime2018)%>%
+  # Base groups
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")
+map
+```
+
+
+
+## Add tiles
+
+```{r, echo=FALSE}
+map <- leaflet(Crime2018)%>%
+  # Base groups
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite")
+map
+```
+
+
+## Add Circles
+
+```{r, eval=FALSE}
+map <- map%>% addCircles(data = Crime2018[Crime2018$category=="drugs",], 
+              group = "Drugs",col="#d73027")%>%
+  addCircles(data = Crime2018[Crime2018$category=="anti-social-behaviour",],
+              group = "AntiSocial",col="#f46d43")%>%
+  addCircles(data = Crime2018[Crime2018$category=="robbery",], 
+              group = "Robbery",col="#fdae61")%>%
+  addCircles(data = Crime2018[Crime2018$category=="vehicle-crime",], 
+              group = "Vehicle Crime",col="#fee090")%>%
+  addCircles(data = Crime2018[Crime2018$category=="violent-crime",], 
+              group = "Violent Crime",col="#ffffbf")%>%
+  addCircles(data = Crime2018[Crime2018$category=="criminal-damage",], 
+              group = "Criminal Damage",col="#e0f3f8")%>%
+  addCircles(data = Crime2018[Crime2018$category=="burglary",], 
+              group = "Burglary",col="#abd9e9")%>%
+  addCircles(data = Crime2018[Crime2018$category=="possession-of-weapons",], 
+              group = "Weapons",col="#74add1")%>%
+  addCircles(data = Crime2018[Crime2018$category=="shoplifting",], 
+              group = "Shoplifting",col="#4575b4")%>%
+  addPolygons(data = outline, lng = ~long, lat = ~lat,fill = F, weight = 2, color = "red", 
+              group = "Outline") 
+map    
+```  
+  
+
+## Add Circles
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+map <- map%>% addCircles(data = Crime2018[Crime2018$category=="drugs",], 
+              group = "Drugs",col="#d73027")%>%
+  addCircles(data = Crime2018[Crime2018$category=="anti-social-behaviour",],
+              group = "AntiSocial",col="#f46d43")%>%
+  addCircles(data = Crime2018[Crime2018$category=="robbery",], 
+              group = "Robbery",col="#fdae61")%>%
+  addCircles(data = Crime2018[Crime2018$category=="vehicle-crime",], 
+              group = "Vehicle Crime",col="#fee090")%>%
+  addCircles(data = Crime2018[Crime2018$category=="violent-crime",], 
+              group = "Violent Crime",col="#ffffbf")%>%
+  addCircles(data = Crime2018[Crime2018$category=="criminal-damage",], 
+              group = "Criminal Damage",col="#e0f3f8")%>%
+  addCircles(data = Crime2018[Crime2018$category=="burglary",], 
+              group = "Burglary",col="#abd9e9")%>%
+  addCircles(data = Crime2018[Crime2018$category=="possession-of-weapons",], 
+              group = "Weapons",col="#74add1")%>%
+  addCircles(data = Crime2018[Crime2018$category=="shoplifting",], 
+              group = "Shoplifting",col="#4575b4")
+map    
+```
+ 
+ 
+## Layers control
+
+```{r, eval=FALSE}
+map%>%  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner Lite"),
+    overlayGroups = c("AntiSocial","Drugs", "Robbery","Vehicle Crime","Violent Crime","Criminal Damage", "Burglary", "Weapons","Shoplifting"),
+    options = layersControlOptions(collapsed = TRUE))  
+```
+
+## Layers control
+
+```{r, echo=FALSE}
+map%>%  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner Lite"),
+    overlayGroups = c("AntiSocial","Drugs", "Robbery","Vehicle Crime","Violent Crime","Criminal Damage", "Burglary", "Weapons","Shoplifting"),
+    options = layersControlOptions(collapsed = TRUE))  
+```
+  
+  

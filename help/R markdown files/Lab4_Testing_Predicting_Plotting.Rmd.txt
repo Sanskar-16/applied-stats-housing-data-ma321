@@ -1,0 +1,190 @@
+---
+title: 'MA304: Testing - Testing, Predicting - Predicting'
+author: "Aris Perperoglou"
+date: "5 October 2018"
+output: html_document
+---
+
+
+```{r, from previous}
+datAll <- read.table("C:/data/MA304 DATA/datAll.txt",header=TRUE)
+attach(datAll)
+library(plyr)#has the revalue command
+nationality <- revalue(Nationality, c("Bulgaria"="EEA National","Estonia"="EEA National","Hungary"="EEA National","Czech Republic"="EEA National","Latvia"="EEA National",  "Lithuania"="EEA National",   "Other EEA National"="EEA National","Poland"="EEA National" ,"Romania"="EEA National", "Slovakia"="EEA National","Slovenia"="EEA National"))
+approval <- ifelse(DecisionCode==1,"yes","no")
+datAll <- cbind(datAll,nationality)
+tab <- table(nationality,approval)
+```
+
+
+# 5. Statistical tests
+
+We would like to check whether there in the rate of approval, depending on the nationality of the applicant. We can use a chi-square test to do that.
+
+
+```{r}
+chisq.test(tab)
+```
+
+We also want to investigate whether there is a difference in approval rates depending on age. Lets see a simple graph first:
+
+```{r}
+boxplot(Age~approval)
+aggregate(Age,by=list(approval),FUN=summary)
+```
+
+Now perform a t-test to check for differences in mean age:
+```{r}
+t.test(Age~approval)
+```
+
+# 6. Predictive analysis
+## Logistic regression
+
+We would like to see what are the factors that influence the probability of approval. We will build a logistic regression model that takes into account all factors together. The response variable is approval, with independend predictors being nationality, Reason, Need and Age. 
+
+```{r}
+y <- ifelse(approval=="yes",1,0)
+datAll <- cbind(datAll,y)
+fit <- glm(y~nationality+Need+Age,family=binomial,data=datAll)
+summary(fit)
+```
+
+
+
+
+Lets assume that we only have a subset of data available, the first 6650 observations. We are going to split the data in to two groups, the first 6650  we will call training set and the rest 511 testing set.
+
+```{r}
+train <- datAll[1:6650,]
+test <- datAll[6651:7161,]
+```
+We will create a model on the training set and will use that to predict what the outcome would have been in the second dataset according to our model. 
+
+```{r}
+rm(nationality)
+```
+
+```{r}
+fit.Train <- glm(y~nationality+Need+Age,family=binomial,data=train)
+```
+
+
+Now use this model to predict the outcome in the test dataset:
+
+```{r}
+X <- test[,c(11,6,7,12)]
+predTst <- predict(fit.Train, newdata=X, type="response")
+```
+
+Check how many of predTst is above 0.5. We are going to label these people as very likely to get approval
+```{r}
+table(predTst>0.5)
+```
+
+We  need check how we performed
+
+```{r}
+pred <- ifelse(predTst>0.5,"yes","no")
+table(test$y,pred)
+round(100*prop.table(table(test$y,pred)),1)
+```
+
+False positive 14.9%, false negative 4.9%. We had positive predictive accuracy on 75.7% of cases.
+
+How can we improve this model?
+
+
+## Random forrests
+
+
+```{r}
+library(randomForest)
+xx <- train[,c(11,6,7,12)]
+fit <- randomForest(xx, as.factor(train$y),importance=FALSE,ntree=1000)
+Prediction <- predict(fit, X)
+table(Prediction,test$y)
+```
+
+
+## Analysis per year
+
+We would like to know if the number of applications has gone up over the years. The variable RegistrationDate contains the exact date. We want to just extract the year out of this variable. 
+Just chect the first observationof this variable:
+```{r}
+RegistrationDate[1]
+```
+
+Using command `substrng` we can cut the right informaton and use in in another variable. We need the 6th character up to the ninth to just get the year. 
+
+```{r}
+year <- substr(RegistrationDate,1,4)
+table(year)
+```
+This will give you the number of applications per year. We are going to create a new variable that has this information and then also identify the number of succesfull applications each year.
+
+```{r}
+app.year <- table(year)
+res <- aggregate(y,by=list(year),FUN=table)
+res
+```
+Not in the right format, we need to remove the first line of table.
+Make a function to only keep the second entry to the table:
+```{r}
+fn <- function(x){
+  table(x)[2]
+}
+res<- aggregate(y,by=list(year),FUN=fn)
+```
+
+Now plot results:
+
+```{r}
+plot(res[,1],res[,2],ylab="Number of succesfull applications",xlab="year",xlim=c(2005,2015),'l')
+```
+
+What if we wanted to see success rate per year?
+Please improve this graph (see below ggplot)!
+
+
+```{r}
+fn <- function(x){
+  r1 <- table(x)
+  rate <- r1[2]/(sum(r1))
+  rate
+}
+res <- aggregate(y,by=list(year),FUN=fn)
+```
+
+Now plot this:
+
+```{r}
+plot(res[,1],res[,2],ylab="Rate of succesfull applications",xlab="year",xlim=c(2005,2015),'l')
+```
+
+## ggplot2
+
+```{r}
+library(ggplot2)
+rdg <- glm(y~nationality+Need+Age,family=binomial,data=datAll)
+
+cf <- coef(rdg)[-1]
+nms <- names(cf)
+pcf <- cf[which(cf>0)]
+pnm <- nms[which(cf>0)]
+ncf <- cf[which(cf<0)]
+nnm <- nms[which(cf<0)]
+
+pcoef <- round(pcf[rev(order(pcf))],4)
+pnam <- pnm[rev(order(pcf))]
+ncoef <- round(ncf[(order(ncf))],4)
+nnam <- nnm[(order(ncf))]
+oro <- (order(pcoef))
+orn <- rev(order(ncoef))+73
+or <- c(oro,orn)
+coefdat <- data.frame(coeff=c(pcoef,ncoef), Effect=c(rep("Decrease",length(pcoef)),rep("Increase",length(ncoef))), nms = c(pnam,nnam),or=or)
+coefdat <-coefdat[-1,]
+coefdat <- coefdat[abs(coefdat$coeff)>.0025,]
+
+ggplot(coefdat,aes(reorder(nms,or)))+xlab("")+ ylab("")+geom_bar(aes(weight = coeff,fill=Effect))+coord_flip()+theme(legend.position=c(.8,.9),panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + geom_hline(yintercept=0)+theme_bw()
+```

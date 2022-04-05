@@ -1,0 +1,380 @@
+---
+title: 'MA304: Lab2: Descriptive Statistics'
+author: "Aris Perperoglou"
+date: "16 October 2018"
+output: html_document
+---
+
+
+## The data
+
+We are goind to use data from a study of lung function among
+636 children aged 7 to 10 years living in a deprived suburb of Lima, Peru. 
+
+Load data from address: 
+```{r}
+peru <- read.table("https://raw.githubusercontent.com/drperpo/Rfunctions/46622b7d6ab004dca4245b4463311b4f6a7dd506/perulung",  header=TRUE)
+```
+
+
+## Adding libraries
+
+In order to read from excel, spss or stata, we have to download a new library. New libraries are available online on CRAN and contain commands that extent the functionality of `R`. You have to know the library that you need, and then import it using command: 
+
+```{r, eval=FALSE}
+install.packages("name of library")
+```
+
+
+## Explore data
+Lets explore the data that we just loaded into R. First, find out the names of the variables:
+
+```{r,eval=TRUE}
+names(peru)
+```
+
+
+## Name changes
+We want to change the name `sex` to `gender`.
+
+```{r,eval=TRUE}
+names(peru)[5] <- "gender"
+```
+Check the outcome:
+```{r}
+names(peru)
+```
+
+# Data analysis
+
+## Distributions
+First, lets see the distribution of gender:
+```{r,eval=TRUE}
+table(peru$gender)
+```
+
+## Give names to categories
+
+```{r,eval=TRUE}
+peru$gender <- factor(peru$gender,
+                      labels=c("Female","Male"))
+```
+
+## The attach command
+To avoid typing the name of the dataset again and again, we are going to attach the data to the workspace. Use the following command:
+```{r,eval=TRUE}
+attach(peru)
+```
+
+Now you can just type 
+
+```{r}
+table(gender)
+``` 
+
+
+## Tables
+```{r, eval=TRUE}
+prop.table(table(gender))
+```
+
+To get percentages:
+```{r,eval=TRUE}
+round( 100*prop.table(table(gender)),2)
+```
+
+
+## Exercises
+Answer the following guestions:
+ - What percentage of people had respiratory symptoms? 
+ - What was the average age of the people?
+ - What was the average fev?
+ - What was the standard deviation of fev?
+ - What was the average height?
+
+
+## Solution
+```{r}
+round( 100*prop.table(table(respsymptoms)),2)
+summary(age)
+summary(fev1)
+sd(fev1)
+summary(height)
+```
+
+## Plot data
+
+
+```{r,eval=TRUE}
+hist(age)
+```
+
+## Histograms
+Lets make each bar represent a third of a year:
+```{r,eval=TRUE}
+hist(age,breaks=seq(7,11,by=.3))
+```
+
+## Barplots
+
+Lets see the distribution of decisions:
+```{r}
+barplot(table(gender))
+```
+
+## Colors
+Lets add some colors:
+```{r}
+barplot(table(gender),col=c("green","red"))
+```
+
+## Custom colors
+
+Visit http://colorbrewer2.org/ for colouring advice
+```{r}
+barplot(table(gender),col=c("#d8b365","#5ab4ac"))
+```
+
+## Some options
+Add `ylim` option to specify the y-axis limits, add `main` to specify title of the graph.
+
+```{r,eval=TRUE, fig.height=2.5, fig.width=3.5}
+barplot(100*prop.table(table(gender)),
+        col=c("#d8b365","#5ab4ac"),
+        ylim=c(0,100),main="Gender")
+```
+
+
+## Cross tabulations
+
+We can investigate how variable vary with each other using command table again. 
+
+```{r,eval=TRUE}
+table(gender,respsymptoms)
+```
+
+
+
+## Proportions
+
+```{r,eval=TRUE}
+100*round(prop.table(table(gender,respsymptoms)),3)
+```
+
+## Choose the margins:
+Out of all the males 24.2% had respiratory problems
+```{r,eval=TRUE}
+100*round(prop.table(table(gender,respsymptoms),
+                     margin=1),3)
+```
+
+## Choose the margins:
+Out of those with respiratory problems, 55.9% of them where males. 
+```{r,eval=TRUE}
+100*round(prop.table(table(gender,respsymptoms),
+                     margin=2),3)
+```
+
+
+
+## Plot
+```{r}
+tab <- table(gender,respsymptoms)
+barplot(tab,beside=TRUE)
+```
+see what happens, thats not really nice. 
+
+```{r}
+barplot(t(tab),beside=TRUE,col=1:2,main="Black=no, Red=yes",ylim=c(0,300))
+```
+
+
+## Scatter plots
+
+A scatter plot is a great device to visualise correlation between two continuous variables. 
+```{r}
+plot(age, fev1)
+```
+
+## Scatter plots
+```{r}
+plot(height,fev1)
+```
+
+##  Add axes labels
+Use command `xlab` and `ylab` to add labels to your graphs. 
+```{r}
+plot(height, age, xlab="Height in cm", ylab="Age in years")
+```
+
+
+## Scatter plots
+You can colour points according to gender. 
+
+```{r}
+plot(age, fev1,col=3)
+points(age[gender=="Female"],fev1[gender=="Female"],col=2)
+legend("topleft",c("Male","Female"),col=c(3,2),bty="n", pch=c(1,1) )
+```
+
+## Boxplot
+The box plot is a great way of displaying the distribution of data based on the five number summary: minimum, first quartile, median, third quartile, and maximum. Point represent outliers, defined as 1.5*interquartile range. 
+
+```{r}
+boxplot(fev1~gender)
+```
+# Statistical tests
+
+## Test for categorical covariates
+We would like to check whether there is a difference in the occurance of symptoms depending on the gender of the person We can use a chi-square test to do that.
+
+
+```{r}
+chisq.test(table(gender,respsymptoms))
+```
+
+## Test for continuous covariates
+We also want to investigate whether there is a difference in fev1 depending on gender. Lets see a simple graph first:
+
+```{r}
+boxplot(fev1~gender)
+aggregate(fev1,by=list(gender),FUN=summary)
+```
+
+Now perform a t-test to check for differences in mean age:
+```{r}
+t.test(fev1~gender)
+```
+
+## Options in t-test
+You can have one-sided or two-sided hypothesis by specifying the type of alternative hypothesis.
+
+```{r}
+t.test(fev1~respsymptoms,alternative="greater")
+```
+
+## Options in t-test
+You can test whether the mean age was 9 years old
+```{r}
+t.test(age,mu=9)
+```
+## Paired t-test
+For paired/matched observations you can use a paired t-test:
+```{r, eval=FALSE}
+t.test(x,y,paired = TRUE)
+```
+
+## Correlation
+Correlation relates two continuous covariates. 
+```{r}
+cor(age,height)
+cor(fev1,height)
+cor(fev1,age)
+```
+
+## Testing correlation
+```{r}
+cor.test(age,height)
+cor.test(fev1,height)
+cor.test(fev1,age)
+```
+
+## Regression
+
+We have seen that gender has an influence on fev1, as does height and age. A regression model will help us do the following things:
+ - Quantify the type of univariate relationship 
+ - Investigate how fev1 behaves when taking into account all predictors
+ - Identify how predictors behave in the presence of other predictors
+ - Predict fev1 
+ 
+## Simple regression model
+
+```{r,eval=TRUE}
+lm(fev1~age)
+```
+
+## More detail
+
+```{r}
+fit.age <- lm(fev1~age)
+summary(fit.age)
+```
+
+## Plot the model
+
+```{r}
+plot(age,fev1)
+abline(fit.age)
+```
+
+## Adding more information
+
+```{r}
+fit <- lm(fev1~age+gender)
+summary(fit)
+```
+
+
+## Regression line per gender
+
+```{r,echo=FALSE,eval=TRUE}
+plot(age,fev1)
+lines(age,-.45594+.2214*age+0.1295,col=3)
+lines(age,-.45594+.2214*age,col=2)
+legend("topleft",c("Male","Female"),col=c(3,2),bty="n", lty=1 )
+```
+
+
+## The full model
+
+```{r}
+fit <- lm(fev1~age+gender+height)
+summary(fit)
+```
+
+## Prediction
+We can predict what the fev1 would be for a new person with hypothetical characteristics. Eg, what would fev1 be for a boy, aged 9 years old, with a height of 120cm. 
+```{r}
+predict(fit,newdata=data.frame(age=9,height=120,
+                               gender="Male"))
+```
+
+
+
+## Relative risks
+
+What is the risk of developing respiratory symptoms depending on gender?
+
+```{r,eval=TRUE}
+Symptoms <- ifelse(respsymptoms==0,"No","Yes")
+table(gender,Symptoms)
+```
+## Odds ratio
+
+Odds ratio (OR) =  (254*64)/(237*81) = 0.84 
+
+Relative risk (RR) = 254/(254+81) divided by 237/(237+64) = 0.96
+
+## Logistic regression
+
+Assume that we would like to predict which person might have respiratory problems. The response is a binary variable, 0 or a 1, yes or no. We then use logistic regression. 
+
+```{r}
+fit <- glm(respsymptoms~gender,family=binomial)
+summary(fit)
+```
+
+## More predictors
+
+
+```{r,eval=TRUE,echo=FALSE}
+fit <- glm(respsymptoms~gender+age+height,family=binomial)
+summary(fit)
+```
+
+## Another model
+
+```{r}
+fit <- glm(respsymptoms~age+fev1,family=binomial)
+summary(fit)
+```
